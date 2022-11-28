@@ -6,6 +6,7 @@
     <string name="format_erg" translatable="false">###,##0.0000</string>
     <string name="format_erg_more_precise" translatable="false">###,##0.000000</string>
     <string name="format_fiat" translatable="false">###,##0.00</string>
+    <string name="button_unlock">Unlock app</string>
 
     <string name="hint_password">Please enter your spending password</string>
     <string name="label_forgot_password">Forgot your password?</string>
@@ -237,6 +238,14 @@
     <string name="label_fee_slow">Slow</string>
     <string name="label_fee_execution_time">Execution time ≈ %1$s min</string>
 
+    <!-- Send funds babel -->
+    <string name="babelfee_hint">You have not enough ERG to cover transaction fees.</string>
+    <string name="babelfee_hint_none">None of your tokens is suitable to cover transaction fees.</string>
+    <string name="babelfee_hint_some">Some of your tokens are suitable to cover transaction fees. You have the following options:</string>
+    <string name="babelfee_reduce_amount">Reduce amount of %2$s tokens sent so that an amount of %1$s is left to use for fees.</string>
+    <string name="babelfee_need_amount">%1$s %2$s tokens can cover fees. However, you only have a balance of %3$s.</string>
+    <string name="babelfee_used">To cover transaction fees of %1$s ERG, %2$s %3$s tokens are used in this transaction.</string>
+
     <!-- Cold wallet signing request screen -->
     <string name="title_signing_request">Sign</string>
     <string name="desc_signing_request">Please check the details of the transaction to issue.</string>
@@ -323,6 +332,7 @@
     <string name="title_suggestions">Suggested apps</string>
     <string name="desc_none">None yet</string>
     <string name="menu_favorite">Favorite</string>
+    <string name="menu_delete_data">Reset app data</string>
     <string name="button_choose_address">Choose address…</string>
     <string name="button_choose_wallet">Choose wallet…</string>
     <string name="dropdown_choose_option">(please choose)</string>
@@ -376,4 +386,8 @@
     <string name="button_balance_notif_hourly">Every hour</string>
     <string name="button_balance_notif_xhourly">Every %1$s hours</string>
     <string name="desc_balance_notification">Your wallet balance changed</string>
+    <string name="title_app_lock">Biometric App Lock</string>
+    <string name="desc_app_lock">Requires a biometric authentication when opening the application and after some inactivity time.\n\n
+        Only available when biometric authentication is set up for this device. Your secrets are always stored safely, even without activating this option.\n
+        Protects from unwanted looks of others using this device. We strongly recommend using a device lock screen instead.</string>
 </resources>

@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -24,6 +25,7 @@ import org.ergoplatform.compose.settings.defaultPadding
 import org.ergoplatform.compose.toComposableText
 import org.ergoplatform.desktop.tokens.TokenEntryView
 import org.ergoplatform.desktop.ui.ErgoAddressText
+import org.ergoplatform.explorer.client.model.AdditionalRegisters
 import org.ergoplatform.explorer.client.model.AssetInstanceInfo
 import org.ergoplatform.mosaik.MiddleEllipsisText
 import org.ergoplatform.mosaik.MosaikStyleConfig
@@ -31,18 +33,28 @@ import org.ergoplatform.mosaik.labelStyle
 import org.ergoplatform.mosaik.model.ui.text.LabelStyle
 import org.ergoplatform.persistance.IAppDatabase
 import org.ergoplatform.transactions.TransactionInfo
+import org.ergoplatform.transactions.reduceBoxes
 import org.ergoplatform.uilogic.*
 import org.ergoplatform.uilogic.transactions.TransactionInfoUiLogic
 
 @Composable
 fun SignTransactionInfoLayout(
     modifier: Modifier,
-    transactionInfo: TransactionInfo,
+    origTransactionInfo: TransactionInfo,
     onConfirm: () -> Unit,
     onTokenClick: ((String) -> Unit)?,
     texts: StringProvider,
     getDb: () -> IAppDatabase,
 ) {
+
+    val reducedViewState = rememberSaveable(origTransactionInfo) { mutableStateOf(true) }
+    val showReduced = reducedViewState.value
+    val transactionInfo = remember(origTransactionInfo, showReduced) {
+        if (showReduced)
+            origTransactionInfo.reduceBoxes()
+        else
+            origTransactionInfo
+    }
 
     Column(modifier) {
 
@@ -61,6 +73,20 @@ fun SignTransactionInfoLayout(
                 style = labelStyle(LabelStyle.BODY1)
             )
         }
+        Text(
+            remember(showReduced) {
+                texts.getString(
+                    if (showReduced) STRING_BUTTON_SWITCH_TO_BOXES
+                    else STRING_BUTTON_SWITCH_TO_AMOUNTS
+                )
+            },
+            Modifier.padding(top = defaultPadding / 4).clickable {
+                reducedViewState.value = !reducedViewState.value
+            }.padding(defaultPadding / 4).align(Alignment.CenterHorizontally),
+            textAlign = TextAlign.Center,
+            style = labelStyle(LabelStyle.BODY2BOLD),
+            color = MosaikStyleConfig.primaryLabelColor,
+        )
 
         Divider(
             Modifier.padding(vertical = defaultPadding / 2),
@@ -68,15 +94,22 @@ fun SignTransactionInfoLayout(
         )
 
         Text(
-            remember { texts.getString(STRING_TITLE_INBOXES) },
+            remember(showReduced) {
+                texts.getString(
+                    if (showReduced) STRING_TITLE_INBOXES
+                    else STRING_TITLE_INPUTS_SPENT,
+                    transactionInfo.inputs.size
+                )
+            },
             style = labelStyle(LabelStyle.BODY1BOLD),
             color = MosaikStyleConfig.primaryLabelColor,
         )
 
-        Text(
-            remember { texts.getString(STRING_DESC_INBOXES) },
-            style = labelStyle(LabelStyle.BODY2),
-        )
+        if (showReduced)
+            Text(
+                remember { texts.getString(STRING_DESC_INBOXES) },
+                style = labelStyle(LabelStyle.BODY2),
+            )
 
         // Inboxes
         Column(Modifier.padding(defaultPadding / 2)) {
@@ -85,6 +118,7 @@ fun SignTransactionInfoLayout(
                     input.value,
                     input.address,
                     input.assets,
+                    input.additionalRegisters,
                     onTokenClick,
                     texts,
                     getDb,
@@ -98,15 +132,22 @@ fun SignTransactionInfoLayout(
         )
 
         Text(
-            remember { texts.getString(STRING_TITLE_OUTBOXES) },
+            remember(showReduced) {
+                texts.getString(
+                    if (showReduced) STRING_TITLE_OUTBOXES
+                    else STRING_TITLE_OUTPUTS_CREATED,
+                    transactionInfo.outputs.size
+                )
+            },
             style = labelStyle(LabelStyle.BODY1BOLD),
             color = MosaikStyleConfig.primaryLabelColor,
         )
 
-        Text(
-            remember { texts.getString(STRING_DESC_OUTBOXES) },
-            style = labelStyle(LabelStyle.BODY2),
-        )
+        if (showReduced)
+            Text(
+                remember { texts.getString(STRING_DESC_OUTBOXES) },
+                style = labelStyle(LabelStyle.BODY2),
+            )
 
         // Outboxes
         Column(Modifier.padding(defaultPadding / 2)) {
@@ -115,6 +156,7 @@ fun SignTransactionInfoLayout(
                     output.value,
                     output.address,
                     output.assets,
+                    output.additionalRegisters,
                     onTokenClick,
                     texts,
                     getDb
@@ -194,6 +236,7 @@ fun TransactionInfoLayout(
                     input.value,
                     input.address,
                     input.assets,
+                    input.additionalRegisters,
                     onTokenClick,
                     texts,
                     getDb
@@ -224,6 +267,7 @@ fun TransactionInfoLayout(
                     output.value,
                     output.address,
                     output.assets,
+                    output.additionalRegisters,
                     onTokenClick,
                     texts,
                     getDb
@@ -240,6 +284,7 @@ fun TransactionInfoBox(
     value: Long?,
     address: String,
     assets: List<AssetInstanceInfo>?,
+    registerInformation: AdditionalRegisters?,
     tokenClickListener: ((String) -> Unit)?,
     texts: StringProvider,
     getDb: () -> IAppDatabase,
@@ -298,6 +343,23 @@ fun TransactionInfoBox(
                                 )
                             }
                         } ?: Modifier)
+                }
+            }
+        }
+
+        if (registerInformation?.isNotEmpty() == true) {
+            Column(
+                Modifier.padding(horizontal = defaultPadding / 2).padding(top = defaultPadding / 2)
+            ) {
+                val sortedRegisterEntries =
+                    remember(registerInformation) { registerInformation.entries.sortedBy { it.key } }
+                sortedRegisterEntries.forEach { entry ->
+                    Text(
+                        entry.key + ": " + entry.value.sigmaType + ", " + entry.value.renderedValue,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                        style = labelStyle(LabelStyle.BODY2)
+                    )
                 }
             }
         }
